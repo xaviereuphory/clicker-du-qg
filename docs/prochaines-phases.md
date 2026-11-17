@@ -274,7 +274,7 @@ Les options 1 et 3 vont bien ensemble. Côté Supabase, il faut une colonne de p
 |-------|---------|
 | 3.0 | Décider ce que mesure le classement (fortune et/ou trophées) |
 | 3.A | Effet `stake` + 3 ou 4 événements « quitte ou double » dans `events.json` + tests |
-| 3.B | Mini-jeu battle de beat (logique testée dans `src/game/`, écran plein en bottom sheet), contre des rivaux de la carte |
+| 3.B | ✅ Fait : mini-jeu battle de beat (`src/game/battle.js`, testé ; écran `src/ui/battle-view.js` en bottom sheet ; réglages `data/battle.json`), contre les rivaux de la carte |
 | 3.C | Contrats chronométrés |
 | 3.B' | Battle contre les fantômes du classement (nouvelle table Supabase des meilleurs scores de battle) |
 | 3.D / 3.E | Boss de palier, puis plateau Tournée avec saisons |

@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="src/ui/app.css">
   <link rel="stylesheet" href="src/ui/studio.css">
   <link rel="stylesheet" href="src/ui/creator.css">
+  <link rel="stylesheet" href="src/ui/battle.css">
 </head>
 <body>
   <!-- Écran de sélection de personnage -->
@@ -229,6 +230,7 @@
           <button id="territory-promo" class="btn btn-promo" type="button"><span>Promo +10 %</span><span id="promo-cost" class="btn-price"></span></button>
           <button id="territory-samples" class="btn btn-joint" type="button"><span>Échantillons +10 %</span><span id="samples-cost" class="btn-price"></span></button>
         </div>
+        <button id="territory-battle" class="btn btn-battle" type="button"><span id="territory-battle-label">⚔️ Battle de beat</span><span id="territory-battle-note" class="btn-price"></span></button>
       </section>
 
       <section id="classement" class="board only-classement" aria-labelledby="board-title">
@@ -341,6 +343,51 @@
         </div>
         <ul id="event-changes" class="event-changes"></ul>
         <div id="event-choices" class="event-choices"></div>
+      </div>
+    </section>
+
+    <section id="sheet-battle" class="sheet sheet-battle" role="dialog" aria-modal="true" aria-labelledby="battle-title" hidden>
+      <header class="sheet-head">
+        <h2 id="battle-title" class="sheet-title">Battle de beat</h2>
+        <button id="battle-close" class="sheet-close" type="button" data-close aria-label="Fermer">✕</button>
+      </header>
+      <div class="sheet-body">
+        <div id="battle-setup" class="battle-setup">
+          <div class="event-card">
+            <span class="event-icon" aria-hidden="true">⚔️</span>
+            <p id="battle-intro" class="event-text"></p>
+          </div>
+          <p class="hint">Tape chaque note quand elle touche la ligne. Au clavier : A S D F (ou ← ↓ ↑ →).</p>
+          <p class="battle-label">Ta mise</p>
+          <div id="battle-stakes" class="battle-stakes" role="radiogroup" aria-label="Ta mise"></div>
+          <p id="battle-odds" class="hint"></p>
+          <p id="battle-block" class="battle-block" role="status"></p>
+          <button id="battle-go" class="btn btn-battle" type="button"><span>⚔️ Lancer la battle</span><span id="battle-go-stake" class="btn-price"></span></button>
+        </div>
+        <div id="battle-play" class="battle-play" hidden>
+          <div class="battle-hud">
+            <span>Toi <strong id="battle-accuracy">—</strong></span>
+            <span><span id="battle-rival-name"></span> <strong id="battle-target"></strong></span>
+          </div>
+          <div class="battle-songline">
+            <span id="battle-song" class="battle-song"></span>
+            <span id="battle-combo" class="battle-combo"></span>
+          </div>
+          <div id="battle-track" class="battle-track">
+            <div id="battle-lanes" class="battle-lanes"></div>
+            <div class="battle-line" aria-hidden="true"></div>
+            <p id="battle-judge" class="battle-judge" aria-live="polite"></p>
+          </div>
+          <div id="battle-pads" class="battle-pads"></div>
+        </div>
+        <div id="battle-result" class="battle-result" hidden>
+          <div class="event-card">
+            <span id="battle-result-icon" class="event-icon" aria-hidden="true"></span>
+            <p id="battle-result-text" class="event-text"></p>
+          </div>
+          <ul id="battle-changes" class="event-changes"></ul>
+          <button id="battle-ok" class="btn btn-ok" type="button"><span>OK</span></button>
+        </div>
       </div>
     </section>
 

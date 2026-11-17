@@ -8,7 +8,7 @@
 //   assets/images/animaux/<idAnimal>.png      animal de compagnie : 2 images de 28 × 20 (npm run sprites)
 
 import {
-  beatValue, beatsPerSecond, cannabisPrice, equipmentCost, formatMoney, formatNumber, getModifiers,
+  battleCooldownLeft, battleRivals, beatValue, beatsPerSecond, cannabisPrice, equipmentCost, formatDuration, formatMoney, formatNumber, getModifiers,
   gramsPerSecond, incomePerSecond, isAvailable, isConquered, isOverdosed, isUnlocked, jointCost,
   netHypePerSecond, petCost, petLevel, producerCost, promoCost, quality, samplesCost, serreRoom, strainCost, studioRoom,
 } from '../game/index.js';
@@ -314,6 +314,7 @@ export function createGameView(data, actions, fx) {
   $('territory-start').onclick = () => actions.startCampaign(selectedTerritory);
   $('territory-promo').onclick = () => tryBuy($('territory-promo'), actions.runPromo);
   $('territory-samples').onclick = () => tryBuy($('territory-samples'), actions.giveSamples);
+  $('territory-battle').onclick = () => actions.openBattle(selectedTerritory);
   $('reset').onclick = () => actions.reset();
 
   // Flatter l'animal : des cœurs qui montent (purement pour le plaisir).
@@ -584,6 +585,15 @@ export function createGameView(data, actions, fx) {
       const samples = samplesCost(state, data, t, mods);
       $('samples-cost').textContent = formatGrams(samples);
       setBuyable($('territory-samples'), $('samples-cost'), { cost: samples, wallet: state.grams, resource: 'grams', format: formatGrams });
+    }
+
+    // Battle de beat contre le rival d'un territoire ouvert (src/ui/battle-view.js).
+    const canBattle = battleRivals(state, data).some((x) => x.id === t.id);
+    $('territory-battle').hidden = !canBattle;
+    if (canBattle) {
+      $('territory-battle-label').textContent = `⚔️ Battle contre ${t.rival}`;
+      const wait = battleCooldownLeft(state, data, t.id);
+      $('territory-battle-note').textContent = wait > 0 ? `revanche ${formatDuration(wait)}` : 'mise ton cash';
     }
 
     const campaign = territories.find((x) => x.id === state.campaign);

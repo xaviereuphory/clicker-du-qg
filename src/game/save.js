@@ -7,6 +7,7 @@ import { rawBeatsPerSecond, beatValue } from './economy.js';
 import { addGrams, gramsPerSecond } from './greenhouse.js';
 import { repairStudio, serreRoom } from './studio.js';
 import { isCustomId, repairBuild } from './creation.js';
+import { repairBattles } from './battle.js';
 
 export const SAVE_KEY = 'clicker-du-qg/save';
 
@@ -46,6 +47,8 @@ export function deserialize(text, data) {
   }
   if (events.pending && !data.events?.list.some((e) => e.id === events.pending)) events.pending = '';
   state.events = events;
+  // Battles de beat : relues et réparées (une battle en cours sera comptée perdue par main.js).
+  state.battles = repairBattles(saved.battles, data);
   // Plans du studio et de la serre : absents dans une vieille sauvegarde (sync installera
   // alors les objets déjà possédés), réparé s'il est abîmé.
   state.studio = repairStudio(saved.studio, state, data);

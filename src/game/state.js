@@ -1,6 +1,7 @@
 // L'état complet d'une partie. Tout ce qui est ici est sauvegardé.
 
 import { emptyStudio } from './studio.js';
+import { emptyBattles } from './battle.js';
 
 export const SAVE_VERSION = 1;
 
@@ -47,6 +48,8 @@ export function createState(data, characterId, now = Date.now(), custom = null) 
       active: [], // effets temporaires : [{ stat, multiply, until, source }]
       last: {}, // { idÉvénement: state.time de la dernière fois }
     },
+    // Battles de beat contre les rivaux de la carte (src/game/battle.js, data/battle.json)
+    battles: emptyBattles(), // { pending, last: { idTerritoire: state.time }, wins, losses, best }
     // Éditeur de studio (src/game/studio.js) : le plan de la pièce isométrique
     studio: emptyStudio(), // { layout: [{ id, x, y, rot }], stored: [id] }
     serre: emptyStudio(), // la serre isométrique, même forme (vide tant que la serre est fermée)

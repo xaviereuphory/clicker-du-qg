@@ -54,15 +54,23 @@ export function campaignTerritory(state, data) {
   return state.campaign ? territory(data, state.campaign) : null;
 }
 
-/** Ajoute de la hype à la campagne en cours ; conquiert le territoire si la barre est pleine. */
+/**
+ * Ajoute de la hype à un territoire ouvert (campagne en cours ou non) ; le conquiert si la barre
+ * est pleine. Sert à la campagne et aux battles de beat gagnées contre un rival.
+ */
+export function addTerritoryHype(state, data, id, amount) {
+  const t = territory(data, id);
+  if (!t || isConquered(state, id)) return [];
+  state.hype[id] = Math.min(t.hype, Math.max(0, (state.hype[id] ?? 0) + amount));
+  if (state.hype[id] < t.hype) return [];
+  state.conquered[id] = true;
+  if (state.campaign === id) state.campaign = '';
+  return [{ type: 'territoryConquered', id, name: t.name }];
+}
+
+/** Ajoute de la hype à la campagne en cours. */
 function addHype(state, data, amount) {
-  const t = campaignTerritory(state, data);
-  if (!t) return [];
-  state.hype[t.id] = Math.min(t.hype, Math.max(0, (state.hype[t.id] ?? 0) + amount));
-  if (state.hype[t.id] < t.hype) return [];
-  state.conquered[t.id] = true;
-  state.campaign = '';
-  return [{ type: 'territoryConquered', id: t.id, name: t.name }];
+  return state.campaign ? addTerritoryHype(state, data, state.campaign, amount) : [];
 }
 
 // ---- Actions -----------------------------------------------------------

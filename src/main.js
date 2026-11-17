@@ -6,7 +6,7 @@ import {
   SAVE_KEY, applyOffline, buyCannabis, buyEquipment, buyPet, buyProducer, buyStrain, buyUpgrade, click,
   createState, deserialize, formatDuration, formatMoney, formatNumber, giveSamples, harvest, playShow,
   moveItem, placeItem, resolveEvent, rollJoint, rotateItem, runPromo, serialize, setCompanion, startCampaign, storeItem,
-  serreRoom, syncStudio, tick, triggerEvent, characterOf,
+  serreRoom, syncStudio, tick, triggerEvent, characterOf, startBattle, finishBattle, abandonBattle,
 } from './game/index.js';
 import { createGameView, showCharacterSelect } from './ui/view.js';
 import { openCreator } from './ui/creator-view.js';
@@ -16,8 +16,9 @@ import { createMotion, MOTION_MODES } from './ui/fx/motion.js';
 import { PROFILE_KEY, createLeaderboard } from './online/leaderboard.js';
 import { liveFromState } from './online/rules.js';
 import { createLeaderboardView } from './ui/leaderboard-view.js';
+import { createBattleView } from './ui/battle-view.js';
 
-const DATA_FILES = ['balance', 'characters', 'producers', 'upgrades', 'tiers', 'texts', 'sounds', 'greenhouse', 'map', 'fx', 'online', 'events', 'pets', 'decor', 'creation'];
+const DATA_FILES = ['balance', 'characters', 'producers', 'upgrades', 'tiers', 'texts', 'sounds', 'greenhouse', 'map', 'fx', 'online', 'events', 'pets', 'decor', 'creation', 'battle'];
 const MOTION_LABELS = { auto: 'Animations : auto', reduced: 'Animations : réduites', full: 'Animations : complètes' };
 const SETTINGS_KEY = 'clicker-du-qg/settings';
 const RENDER_INTERVAL = 1 / 15; // l'affichage est rafraîchi 15 fois par seconde
@@ -45,6 +46,8 @@ const MESSAGE_EVENTS = {
   companion: '',
   studioFull: '',
   serreFull: '',
+  battleWin: '',
+  battleLose: 'danger',
 };
 
 // Un achat qui peut ajouter un objet dans la pièce du studio.
@@ -190,6 +193,7 @@ function startGame(data, state, { audio, settings, motion, offline }) {
     buyUpgrade: (id) => handle(buyUpgrade(state, data, id)),
     buyPet: (id) => handle(buyPet(state, data, id)),
     setCompanion: (id) => handle(setCompanion(state, data, id)),
+    openBattle: (id) => battleView.open(id),
     // Éditeur de studio : le plan change, et « Terminé » sauvegarde tout de suite (aussi en ligne).
     studio: {
       place: (id, x, y, rot) => placeItem(state, data, id, x, y, rot),
@@ -271,6 +275,24 @@ function startGame(data, state, { audio, settings, motion, offline }) {
   });
   leaderboard.start(() => state);
 
+  // ---- Battle de beat (src/game/battle.js, src/ui/battle-view.js) ----
+  const battleView = createBattleView(data, {
+    getState: () => state,
+    start(id, shareIndex) {
+      const events = startBattle(state, data, id, shareIndex);
+      handle(events);
+      if (events.length) save(); // la mise est payée : une battle abandonnée sera comptée perdue
+      return events[0] ?? null;
+    },
+    finish(accuracy) {
+      const events = finishBattle(state, data, accuracy);
+      handle(events);
+      save();
+      leaderboard.requestSubmit();
+      return events;
+    },
+  }, { openSheet: (id, options) => view.openSheet(id, options), closeSheet: (...args) => view.closeSheet(...args), audio });
+
   /** Réponse du joueur à une question d'événement (police, voisin...). */
   function chooseEvent(index) {
     handle(resolveEvent(state, data, index));
@@ -295,15 +317,20 @@ function startGame(data, state, { audio, settings, motion, offline }) {
       if (event.type === 'greenhouseUnlock') view.announceGreenhouse();
       if (event.type === 'mapUnlock') view.announceMap();
       if (event.type in MESSAGE_EVENTS) {
-        const key = event.type === 'campaignStart' && event.rival ? 'campaignRival' : event.type;
-        const text = message(data, key, { tier: event.name, name: event.name, rival: event.rival, level: event.level });
+        const key = event.forfeit ? 'battleForfeit'
+          : event.type === 'campaignStart' && event.rival ? 'campaignRival' : event.type;
+        const money = formatMoney(event.type === 'battleWin' ? event.payout - event.stake : event.stake ?? 0);
+        const text = message(data, key, { tier: event.name, name: event.name, rival: event.rival, level: event.level, money });
         if (text) view.showMessage(text, MESSAGE_EVENTS[event.type]);
       }
     }
     // Un objet tout juste acheté apparaît dans la pièce (ou attend dans l'inventaire si elle est pleine).
     if (events.some((e) => STUDIO_EVENTS.has(e.type))) handle(syncStudio(state, data));
     if (events.some((e) => SERRE_EVENTS.has(e.type))) handle(serreRoom.sync(state, data));
-    if (events.length) view.update(state);
+    if (events.length) {
+      view.update(state);
+      battleView.update();
+    }
   }
 
   function save() {
@@ -348,6 +375,13 @@ function startGame(data, state, { audio, settings, motion, offline }) {
   showOffline(offline);
   view.update(state);
 
+  // Une battle laissée en plan (jeu fermé pendant la partie) compte comme perdue.
+  if (state.battles.pending) {
+    const events = abandonBattle(state, data);
+    handle(events);
+    battleView.showResult(events[0]);
+    save();
+  }
   // Une question d'événement restée sans réponse (jeu fermé entre-temps) revient à l'écran.
   if (state.events.pending) view.showEvent({ type: 'eventPrompt', id: state.events.pending }, chooseEvent);
   // Pour essayer un événement sans attendre : ?evenement=police (voir data/events.json).
@@ -406,6 +440,7 @@ function startGame(data, state, { audio, settings, motion, offline }) {
     if (sinceRender >= RENDER_INTERVAL) {
       sinceRender = 0;
       view.update(state);
+      battleView.update();
     }
 
     sinceSave += dt;

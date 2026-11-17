@@ -38,4 +38,5 @@ La préparation détaillée des prochaines phases (éditeur de studio isométriq
 
 - **Prestige — la station lunaire** : tout recommencer en échange d'étoiles qui donnent un bonus permanent. Rend le jeu rejouable et rend le leaderboard plus intéressant.
 - **Le label** : signer d'autres artistes qui produisent pour toi.
+- ~~**Battle de beat**~~ : fait (mini-jeu de rythme contre les rivaux de la carte, avec mise : `data/battle.json`, `src/game/battle.js`). Suite prévue : fantômes du classement, boss de palier (voir docs/prochaines-phases.md, 3.B' et 3.D).
 - ~~**Événements**~~ : fait (13 événements à la BitLife dans `data/events.json` : police, impôts, panne, voisin, clash, beat viral…). Idées pour la suite : battle de rap, tournée, événements liés aux territoires de la carte.

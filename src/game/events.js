@@ -162,7 +162,8 @@ export function tickEvents(state, data, dt, mods, rng = Math.random) {
     state.events.nextAt = state.time + config.firstDelaySeconds;
     return out;
   }
-  if (state.events.pending || state.time < state.events.nextAt) return out;
+  // Pas de nouvel événement pendant une question en attente ni en pleine battle de beat.
+  if (state.events.pending || state.battles?.pending || state.time < state.events.nextAt) return out;
 
   scheduleNext(state, data, rng);
   const eligible = config.list.filter((def) => isEligible(def, state, data, mods));

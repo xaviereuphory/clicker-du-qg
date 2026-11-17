@@ -20,6 +20,7 @@ export function loadData() {
     pets: read('pets'),
     decor: read('decor'),
     creation: read('creation'),
+    battle: read('battle'),
   };
 }
 

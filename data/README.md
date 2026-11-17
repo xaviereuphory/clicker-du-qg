@@ -23,6 +23,7 @@ Tout le contenu du jeu vit ici, séparé du code. Les volets B (visuel) et C (so
 | `events.json` | Événements à la BitLife (police, impôts, beat viral…) : fréquence, conditions, effets, choix et leurs chances. Les textes sont à réécrire par le volet C. Essai direct : `?evenement=<id>` | A (règles), C (textes) |
 | `creation.json` | « Créer mon perso » au début d'une partie : points de talent, talents, signes particuliers, noms au hasard, palettes de couleurs. Voir « Création de perso » plus bas | A (chiffres), C (noms, textes) |
 | `decor.json` | Éditeur de studio (le QG en vue isométrique) : taille de la pièce (`room`) et objets plaçables (`items`). Voir « Objets du studio » plus bas | A (règles), B (sprites, couleurs), C (noms des objets déco) |
+| `battle.json` | Battle de beat contre les rivaux de la carte : tempo, nombre de temps, pistes, fenêtres de frappe, mises proposées, gains, hype gagnée, difficulté selon le rival. Voir « Battle de beat » plus bas | A |
 
 ## Identifiants (`id`)
 
@@ -231,3 +232,35 @@ Un événement tombe toutes les `minGapSeconds` à `maxGapSeconds` secondes de j
 - `requires` : `minTier`, `minMoney`, `minIncome` ($/s), `minBps`, `stash` (zen ou grammes à saisir), `greenhouse`, `map`, `campaign`.
 - Soit `effects` (appliqués tout de suite), soit `choices` : chaque choix a un `label` et des `outcomes` dont les `chance` font 1.
 - Effets : `money` (`multiply`, ou `incomeSeconds` : ± N secondes de revenu), `fans` (`multiply`), `grams` (`multiply`, `add`), `stash` (`share` : part saisie du zen et des grammes), `hype` (`multiply`, campagne en cours), `buff` (`stat`, `multiply`, `seconds` : effet temporaire).
+
+## Battle de beat (`battle.json`)
+
+Sur la carte, la fiche d'un territoire **ouvert** (ou en campagne) qui a un `rival` propose « ⚔️ Battle contre … » : un mini-jeu de rythme de 15 à 25 s (une petite chanson de 8 mesures, à un tempo et dans un genre tirés au hasard) (logique dans `src/game/battle.js`, écran dans `src/ui/battle-view.js`).
+
+| Champ | Sens |
+|---|---|
+| `bpm` | La plage de tempo : chaque battle tire un tempo entier entre `min` (88) et `max` (130). |
+| `beats`, `leadInBeats` | Nombre de temps joués (32 = 8 mesures, de 15 à 25 s selon le tempo) et temps de décompte avant la première note (4 = une mesure). |
+| `lanes` | Nombre de pistes : 4 (A S D F, J K L ; ou ← ↓ ↑ → au clavier). |
+| `genres` | Les genres, chacun avec sa plage de tempo (`bpm`). Le tempo tiré choisit le genre : chaque tempo de 88 à 130 doit tomber dans **exactement un** genre (le test le vérifie). Pour chaque genre : `instruments` (4, un par piste, de gauche à droite : `id`, `name` écrit sous le pad, `sound` = l'événement de `sounds.json` joué quand on tape le pad, et `tuned` facultatif : `chord` joue l'accord de la mesure, `arpeggio` l'égrène, `root` joue sa fondamentale ; l'icône est dans `src/ui/battle-view.js`), `swing` (0,5 = croches droites ; plus haut = le « et » arrive plus tard, comme en boom bap), `metronome` (les coups d'une mesure : `at` en temps de 0 à 4, `sound`, `volume`), `song` et `groove` (ci-dessous). |
+| `song` (dans un genre) | La chanson : `sections` = des phrases de 4 (ou 8) mesures, un accord par mesure, avec un `name` (affiché pendant la partie) et une `intensity` (plus haut = plus de contretemps) ; `ending` = l'accord de fin, joué le temps juste après la dernière mesure, le même que l'accord de départ. |
+| `groove` (dans un genre) | Le beat que le joueur tape. `base` : l'instrument de chaque temps, sur 1 ou 2 mesures (4 ou 8 temps) qui tournent en boucle ; chaque instrument doit y avoir au moins une note, pour qu'on joue les 4 même contre le rival le plus faible. `doubles` : un 2e instrument possible sur un temps. `offbeats` : les contretemps possibles, `at` temps après le début du temps (0,5 = le « et », 0,75 = la dernière double croche). Les rivaux forts ajoutent plus de doubles et de contretemps (`difficulty`). |
+| `chords` | Les accords de tous les genres : `root` = la fondamentale (jouée par le kick) et `notes` = les notes du piano, en demi-tons autour du do des fichiers son (0 = C4 pour le piano, C2 pour le kick). |
+| `windows` | Écart permis, en secondes, pour une frappe `perfect` et `good` (au-delà : ratée). |
+| `points` | Ce que vaut une note `perfect` (1) et `good`. Une frappe dans le vide compte comme une demi-note ratée. |
+| `stakes` | Les mises proposées, en part du cash (jamais plus de 0,5). `minStake` : mise minimale en $. |
+| `cooldownSeconds` | Attente avant une revanche contre le même rival (temps de jeu ; 0 = tout de suite, réglage actuel pour tester). |
+| `allowDuringFailOut` | `true` = on peut faire une battle pendant un fail out (réglage actuel pour tester) ; `false` = bloqué. |
+| `payout` | Ce que rapporte la mise si on bat le rival : `atTarget` pile au score du rival, jusqu'à `perfect` pour un sans-faute. Sinon, la mise est perdue. |
+| `hypeShare` | Hype gagnée par le territoire après une victoire, en part de sa barre (peut finir la conquête). |
+| `difficulty` | Du rival le plus faible (`easiest`) au plus fort (`hardest`), classés par `defense` dans `map.json` : `target` = précision à battre, `offbeat` = chance d'une note en contretemps, `doubles` = chance de deux notes en même temps. |
+
+Pas de battle quand un événement attend une réponse (ni pendant un fail out si `allowDuringFailOut` vaut `false`) ; pas de nouvel événement pendant une battle. Une battle laissée en plan (jeu fermé) compte comme perdue. **Les trois genres** (d'après des guides de production ; à ajuster à l'oreille) :
+
+| Genre | Tempo | Les 4 pads | Beat à taper | Accords (do majeur / la mineur) | Métronome |
+|---|---|---|---|---|---|
+| Boom bap | 88 à 97 | Kick, Caisse claire, Rhodes (accord), Contrebasse (fondamentale) | Rhodes au 1 (changement d'accord), caisse claire sur 2 et 4, kick ou contrebasse sur 3 ; kick syncopé après 2 et 3, contrebasse après 1 ; tout est **swingué** | couplet Cmaj7–Am7–Dm7–G7 (I–vi–ii–V), refrain Fmaj7–Em7–Dm7–G7, fin Cmaj7 | charleston en croches swinguées |
+| Afrobeats | 98 à 115 | Kick, Rimshot, Guitare highlife (accord égrené), Conga | kick au 1 (jamais sur chaque temps), rimshot sur 2 et 4, guitare ou conga au 3 ; guitare en **3-3-2** (après 1 et 3, sur la dernière double croche), kick sur le « et » de 2, conga sur celui de 4 | couplet Cmaj7–G–Am7–Fmaj7 (I–V–vi–IV), refrain Fmaj7–G–Am7–G, fin Cmaj7 | shaker en doubles croches, accents 3-3-2 |
+| House | 116 à 130 | Kick, Clap, Piano (stabs), Basse (fondamentale) | kick sur 1 et 3, clap sur 2 et 4, piano ou basse en 2e mesure ; contre les forts rivaux, kick sur chaque temps (le **four on the floor**) ; basse et piano en alternance sur les « et » | couplet Am7–Dm7 (i7–iv7), refrain Fmaj7–Em7, fin Am7 | charleston fermé sur le temps, ouvert sur le « et » |
+
+Le son et l'image sont calés sur l'horloge audio (Web Audio) : une mesure de décompte aux baguettes (`battleCount`, 1-2-3-4), puis le métronome du genre (`battleHat`, `battleShaker`, `battleOpenHat`). Une note touche la ligne exactement quand le temps sonne. Il n'y a pas de batterie de fond : c'est le joueur qui joue le beat avec les 4 pads du genre (`battleKick`, `battleSnare`, `battleRhodes`, `battleUprightBass`, `battleRimshot`, `battleGuitar`, `battleConga`, `battleClap`, `battlePiano`, `battleSynthBass`). Une note ratée ne fait **aucun bruit**. À la fin : `battleWin` ou `battleLose`. Pendant la partie, le genre et le tempo sont dans le titre (« Boom bap · 92 BPM »), la section et l'accord en cours en haut de la piste (« Refrain · Fmaj7 »). Pour l'instant, ce sont des sons **provisoires** synthétisés (`assets/audio/effets/battle-*-01.m4a`) : le volet C les remplace par de vrais sons du même nom, ou change les chemins dans `sounds.json`. Les instruments d'accords (piano, rhodes, guitare) doivent rester en do (C4), les kicks et les basses en do grave (C2) : le jeu les transpose pour suivre les accords. Les messages `battleWin`, `battleLose`, `battleForfeit` sont dans `texts.json`.

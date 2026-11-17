@@ -13,3 +13,4 @@ export * from './events.js';
 export * from './pets.js';
 export * from './studio.js';
 export * from './creation.js';
+export * from './battle.js';

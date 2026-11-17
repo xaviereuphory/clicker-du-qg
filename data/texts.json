@@ -70,6 +70,17 @@
       "{name} est conquis ! Tout le monde connaît tes beats là-bas.",
       "{name} : territoire conquis. Les radios locales jouent juste toi."
     ],
+    "battleWin": [
+      "Battle gagnée contre {rival} : +{money}. {name} parle juste de toi.",
+      "{rival} n'a rien vu venir. +{money} dans tes poches."
+    ],
+    "battleLose": [
+      "{rival} gagne la battle. Ta mise de {money} change de poche.",
+      "Battle perdue contre {rival} : −{money}. La revanche viendra."
+    ],
+    "battleForfeit": [
+      "La battle contre {rival} a été laissée en plan : −{money}."
+    ],
     "studioMigrated": [
       "Ton QG est maintenant une vraie pièce ! Tes {count} objets y sont déjà installés. Touche ✏️ pour tout réaménager."
     ],

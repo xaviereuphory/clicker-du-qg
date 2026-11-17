@@ -78,7 +78,10 @@ test('texts.json : chaque statistique a un libellé', () => {
 test('sounds.json : chemins relatifs à assets/audio', () => {
   for (const [key, list] of Object.entries(data.sounds.effects)) {
     assert.ok(Array.isArray(list), `sounds.json/effects.${key}`);
-    for (const file of list) assert.match(file, /^(effets|musique)\/.+\.(mp3|ogg)$/, `sounds.json : « ${file} »`);
+    for (const file of list) {
+      assert.match(file, /^(effets|musique)\/.+\.(m4a|mp3|ogg)$/, `sounds.json : « ${file} »`);
+      assert.ok(fs.existsSync(new URL(`../assets/audio/${file}`, import.meta.url)), `sounds.json : fichier manquant « ${file} »`);
+    }
   }
 });
 
